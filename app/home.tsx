@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+
+const logo = require('../assets/LogoQuePharma.png');
 
 export default function HomeScreen() {
   const { idUsuario } = useLocalSearchParams();
@@ -14,8 +16,9 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Inicio</Text>
-        <Text style={styles.headerSubtitle}>Bienvenido al panel de Promotores</Text>
+        <Image source={logo} style={styles.headerLogo} resizeMode="contain" />
+        <Text style={styles.headerTitle}>Panel de Promotores</Text>
+        <Text style={styles.headerSubtitle}>Bienvenido a tu jornada del día</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -69,9 +72,10 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f1f5f9' },
-  header: { padding: 20, backgroundColor: '#1a237e', paddingTop: 60, paddingBottom: 30, borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
-  headerTitle: { color: '#ffffff', fontSize: 26, fontWeight: '900' },
-  headerSubtitle: { color: '#e0e7ff', marginTop: 8, fontSize: 16, fontWeight: '500' },
+  header: { padding: 20, backgroundColor: '#1a237e', paddingTop: 60, paddingBottom: 30, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, alignItems: 'center' },
+  headerLogo: { width: 150, height: 55, marginBottom: 10 },
+  headerTitle: { color: '#ffffff', fontSize: 22, fontWeight: '900', textAlign: 'center' },
+  headerSubtitle: { color: '#e0e7ff', marginTop: 6, fontSize: 14, fontWeight: '500', textAlign: 'center' },
   content: { padding: 20, paddingTop: 30 },
   card: {
     backgroundColor: '#ffffff',

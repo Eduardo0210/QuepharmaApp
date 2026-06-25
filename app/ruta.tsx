@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Switch, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Switch, Modal, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { Feather } from '@expo/vector-icons';
@@ -9,18 +9,25 @@ import { API_BASE_URL } from '../constants/api';
 export default function RutaScreen() {
   const { idGeocerca, idUsuario } = useLocalSearchParams();
   const router = useRouter();
-  const [rutaData, setRutaData] = useState(null);
-  const [puntosInteres, setPuntosInteres] = useState([]);
+  const [rutaData, setRutaData] = useState<any>(null);
+  const [puntosInteres, setPuntosInteres] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // GPS en tiempo real
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState<any>(null);
   const [gpsEnabled, setGpsEnabled] = useState(false);
   const [mockGPS, setMockGPS] = useState(false);
 
   // Modal agregar farmacia
   const [modalVisible, setModalVisible] = useState(false);
-  const [nuevaFarmacia, setNuevaFarmacia] = useState({ nombre: '', direccion: '' });
+  const [nuevaFarmacia, setNuevaFarmacia] = useState({ 
+    nombre: '', 
+    direccion: '', 
+    nombreCliente: '', 
+    telefono: '', 
+    esClienteQuepharma: false, 
+    observaciones: '' 
+  });
   const [guardandoFarmacia, setGuardandoFarmacia] = useState(false);
 
   // Cargar ruta asignada
@@ -140,12 +147,23 @@ export default function RutaScreen() {
           sDireccion: nuevaFarmacia.direccion.trim(),
           dLatitud: userLocation.latitude,
           dLongitud: userLocation.longitude,
+          sNombreCliente: nuevaFarmacia.nombreCliente.trim(),
+          sTelefono: nuevaFarmacia.telefono.trim(),
+          bEsClienteQuepharma: nuevaFarmacia.esClienteQuepharma,
+          sObservaciones: nuevaFarmacia.observaciones.trim(),
         }),
       });
       const data = await res.json();
       if (data.success) {
         setModalVisible(false);
-        setNuevaFarmacia({ nombre: '', direccion: '' });
+        setNuevaFarmacia({ 
+          nombre: '', 
+          direccion: '',
+          nombreCliente: '',
+          telefono: '',
+          esClienteQuepharma: false,
+          observaciones: ''
+        });
         cargarRutaAsignada();
         Alert.alert("¡Farmacia Agregada!", `"${nuevaFarmacia.nombre.trim()}" se añadió a tu ruta de hoy.`);
       } else {
@@ -194,6 +212,28 @@ export default function RutaScreen() {
           <View style={{ flex: 1, marginLeft: 15 }}>
             <Text style={styles.poiName}>{item.sNombre}</Text>
             <Text style={styles.poiAddress}>{item.sDireccion}</Text>
+
+            {/* Campos de Localidad Personalizados */}
+            {item.sNombreCliente ? (
+              <Text style={styles.poiDetailText}>
+                👤 <Text style={{fontWeight: '600'}}>Cliente:</Text> {item.sNombreCliente}
+              </Text>
+            ) : null}
+            {item.sTelefono ? (
+              <Text style={styles.poiDetailText}>
+                📞 <Text style={{fontWeight: '600'}}>Tel:</Text> {item.sTelefono}
+              </Text>
+            ) : null}
+            {item.bEsClienteQuepharma ? (
+              <View style={styles.qpClientBadge}>
+                <Text style={styles.qpClientBadgeText}>✓ Cliente Quepharma</Text>
+              </View>
+            ) : null}
+            {item.sObservaciones ? (
+              <Text style={[styles.poiDetailText, { fontStyle: 'italic', color: '#475569' }]}>
+                📝 <Text style={{fontWeight: '600'}}>Obs:</Text> {item.sObservaciones}
+              </Text>
+            ) : null}
             
             {/* Indicador de Distancia */}
             {!item.bVisitado && (
@@ -351,7 +391,7 @@ export default function RutaScreen() {
       {/* Modal: Agregar Farmacia */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <View style={[styles.modalContainer, { maxHeight: '85%' }]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Agregar Farmacia a la Ruta</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -359,55 +399,109 @@ export default function RutaScreen() {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.modalLabel}>Nombre de la Farmacia *</Text>
-            <View style={styles.modalInputWrapper}>
-              <Feather name="home" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Ej. Farmacia del Ahorro"
-                placeholderTextColor="#94a3b8"
-                value={nuevaFarmacia.nombre}
-                onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, nombre: t }))}
-                maxLength={120}
-              />
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={styles.modalLabel}>Nombre de la Farmacia *</Text>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="home" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Ej. Farmacia del Ahorro"
+                  placeholderTextColor="#94a3b8"
+                  value={nuevaFarmacia.nombre}
+                  onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, nombre: t }))}
+                  maxLength={120}
+                />
+              </View>
 
-            <Text style={styles.modalLabel}>Dirección (opcional)</Text>
-            <View style={styles.modalInputWrapper}>
-              <Feather name="map-pin" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
-              <TextInput
-                style={styles.modalInput}
-                placeholder="Ej. Av. Principal 123"
-                placeholderTextColor="#94a3b8"
-                value={nuevaFarmacia.direccion}
-                onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, direccion: t }))}
-                maxLength={200}
-              />
-            </View>
+              <Text style={styles.modalLabel}>Nombre del Cliente</Text>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="user" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Ej. Juan Pérez"
+                  placeholderTextColor="#94a3b8"
+                  value={nuevaFarmacia.nombreCliente}
+                  onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, nombreCliente: t }))}
+                  maxLength={120}
+                />
+              </View>
 
-            <View style={styles.modalGpsRow}>
-              <Feather name="navigation" size={13} color={userLocation ? "#16a34a" : "#ef4444"} style={{ marginRight: 6 }} />
-              <Text style={[styles.modalGpsText, { color: userLocation ? "#16a34a" : "#ef4444" }]}>
-                {userLocation
-                  ? `GPS: ${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`
-                  : "GPS no disponible — activa el Simulador arriba"}
-              </Text>
-            </View>
+              <Text style={styles.modalLabel}>Dirección (opcional)</Text>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="map-pin" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Ej. Av. Principal 123"
+                  placeholderTextColor="#94a3b8"
+                  value={nuevaFarmacia.direccion}
+                  onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, direccion: t }))}
+                  maxLength={200}
+                />
+              </View>
 
-            <TouchableOpacity
-              style={[styles.modalSaveBtn, (!userLocation || guardandoFarmacia) && { opacity: 0.6 }]}
-              onPress={agregarFarmacia}
-              disabled={!userLocation || guardandoFarmacia}
-            >
-              {guardandoFarmacia ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Feather name="plus-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={styles.modalSaveBtnText}>Agregar a la Ruta</Text>
-                </>
-              )}
-            </TouchableOpacity>
+              <Text style={styles.modalLabel}>Teléfono</Text>
+              <View style={styles.modalInputWrapper}>
+                <Feather name="phone" size={16} color="#94a3b8" style={{ marginRight: 10 }} />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Ej. 3312345678"
+                  placeholderTextColor="#94a3b8"
+                  keyboardType="phone-pad"
+                  value={nuevaFarmacia.telefono}
+                  onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, telefono: t }))}
+                  maxLength={20}
+                />
+              </View>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, paddingHorizontal: 4 }}>
+                <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#334155' }}>¿Es cliente de Quepharma?</Text>
+                <Switch
+                  value={nuevaFarmacia.esClienteQuepharma}
+                  onValueChange={(val) => setNuevaFarmacia(prev => ({ ...prev, esClienteQuepharma: val }))}
+                  trackColor={{ false: "#cbd5e1", true: "#051F5F" }}
+                  thumbColor={nuevaFarmacia.esClienteQuepharma ? "#051F5F" : "#f1f5f9"}
+                />
+              </View>
+
+              <Text style={styles.modalLabel}>Observaciones</Text>
+              <View style={[styles.modalInputWrapper, { height: 80, alignItems: 'flex-start', paddingTop: 8 }]}>
+                <Feather name="edit-3" size={16} color="#94a3b8" style={{ marginRight: 10, marginTop: 4 }} />
+                <TextInput
+                  style={[styles.modalInput, { height: '100%', textAlignVertical: 'top' }]}
+                  placeholder="Ej. Dejar muestras médicas..."
+                  placeholderTextColor="#94a3b8"
+                  multiline
+                  numberOfLines={3}
+                  value={nuevaFarmacia.observaciones}
+                  onChangeText={(t) => setNuevaFarmacia(prev => ({ ...prev, observaciones: t }))}
+                  maxLength={500}
+                />
+              </View>
+
+              <View style={styles.modalGpsRow}>
+                <Feather name="navigation" size={13} color={userLocation ? "#16a34a" : "#ef4444"} style={{ marginRight: 6 }} />
+                <Text style={[styles.modalGpsText, { color: userLocation ? "#16a34a" : "#ef4444" }]}>
+                  {userLocation
+                    ? `GPS: ${userLocation.latitude.toFixed(5)}, ${userLocation.longitude.toFixed(5)}`
+                    : "GPS no disponible — activa el Simulador arriba"}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, (!userLocation || guardandoFarmacia) && { opacity: 0.6 }]}
+                onPress={agregarFarmacia}
+                disabled={!userLocation || guardandoFarmacia}
+              >
+                {guardandoFarmacia ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <Feather name="plus-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={styles.modalSaveBtnText}>Agregar a la Ruta</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -583,4 +677,7 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   modalSaveBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  poiDetailText: { fontSize: 13, color: '#475569', marginTop: 4, display: 'flex', alignItems: 'center' },
+  qpClientBadge: { backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, alignSelf: 'flex-start', marginTop: 6 },
+  qpClientBadgeText: { color: '#0369a1', fontSize: 11, fontWeight: 'bold' },
 });

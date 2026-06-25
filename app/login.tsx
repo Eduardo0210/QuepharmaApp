@@ -3,6 +3,8 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } fro
 import { useRouter } from 'expo-router';
 import { API_BASE_URL } from '../constants/api';
 
+const logo = require('../assets/LogoQuePharma.png');
+
 export default function LoginScreen() {
   const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
@@ -49,8 +51,9 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Quepharma Promotores</Text>
-      
+      <Image source={logo} style={styles.logo} resizeMode="contain" />
+      <Text style={styles.title}>Promotores</Text>
+
       <View style={styles.card}>
         <TextInput
           style={styles.input}
@@ -85,12 +88,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f7fa',
     padding: 20
   },
+  logo: {
+    width: 180,
+    height: 80,
+    marginBottom: 12
+  },
   title: {
-    fontSize: 28,
-    fontWeight: '800',
+    fontSize: 22,
+    fontWeight: '700',
     color: '#1a237e',
-    marginBottom: 40,
-    textAlign: 'center'
+    marginBottom: 32,
+    textAlign: 'center',
+    letterSpacing: 1
   },
   card: {
     width: '100%',
